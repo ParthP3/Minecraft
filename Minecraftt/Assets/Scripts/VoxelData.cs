@@ -5,7 +5,7 @@ using UnityEngine;
 public static class VoxelData
 {
     public static readonly int chunkWidth = 5;
-    public static readonly int chunkHeight = 5;
+    public static readonly int chunkHeight = 16;
     // Texture atlas information
     public static readonly float x_textures = 64;
     public static readonly float y_textures = 32;

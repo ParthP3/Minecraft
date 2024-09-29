@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class Chunk : MonoBehaviour
 {
+    GameObject chunkObject;
     public MeshRenderer meshRenderer;
     public MeshFilter meshFilter;
+
     int vertexIndex = 0;
     List <Vector3> vertices = new List<Vector3>();
     List<int> triangles = new List<int>();
@@ -13,8 +15,11 @@ public class Chunk : MonoBehaviour
     byte [,,] voxelMap = new byte[VoxelData.chunkWidth, VoxelData.chunkHeight, VoxelData.chunkWidth];
     World world;
 
-    void Start(){
-        world = GameObject.Find("World").GetComponent<World>();
+    public Chunk(World _world){
+        world = _world;
+        chunkObject = new GameObject();
+        meshFilter = chunkObject.AddComponent<MeshFilter>();
+        meshRenderer = chunkObject.AddComponent<MeshRenderer>();
         PopulateVoxelMap();
         CreateMeshData();
         CreateMesh();
@@ -25,6 +30,19 @@ public class Chunk : MonoBehaviour
         for(int y = 0; y<VoxelData.chunkHeight; y++){
             for(int x = 0; x<VoxelData.chunkWidth; x++){
                 for(int z = 0; z<VoxelData.chunkWidth; z++){
+                    if(y==0){
+                        voxelMap[x,y,z] = 4;
+                    }
+                    else if(y<6){
+                        voxelMap[x,y,z] = 3;
+                    }
+                    else if(y<14){
+                        voxelMap[x,y,z] = 1;
+                    }
+                    else if(y==VoxelData.chunkHeight-1){
+                        voxelMap[x,y,z] = 2;
+                    }
+                    else
                     voxelMap[x,y,z] = 1;
                 }
             }
@@ -58,6 +76,7 @@ public class Chunk : MonoBehaviour
         //For each face of the voxel
         for(int i = 0; i<6; i++){
             if(!CheckVoxel(chunkPosition + VoxelData.faceChecks[i])){
+                // For each vertex of the face
                 for(int j=0; j<6; j++){
                     vertices.Add(VoxelData.voxelVerts[VoxelData.voxelTris[i, VoxelData.TriangleVertexIndices[j]]]+chunkPosition);
                     triangles.Add(vertexIndex);
@@ -85,6 +104,6 @@ public class Chunk : MonoBehaviour
     Vector2 GetTextureOnAtlas(int id){
         float x_textures = VoxelData.x_textures;
         float y_textures = VoxelData.y_textures;
-        return new Vector2((float)(id % x_textures) / (float)x_textures, Mathf.Floor(id / x_textures) / (float)y_textures);
+        return new Vector2((float)((int)(id % x_textures) / (float)x_textures), Mathf.Floor(id / x_textures) / (float)y_textures);
     }
 }
