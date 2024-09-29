@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class World : MonoBehaviour{
-    public static readonly BlockType[] blockTypes = new BlockType[256];
+    public readonly BlockType[] blockTypes = new BlockType[256];
     public void Start(){
         blockTypes[0] = new BlockType("Air", false);
         blockTypes[1] = new BlockType("Grass_Block", true);

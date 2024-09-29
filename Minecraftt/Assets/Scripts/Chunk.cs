@@ -11,9 +11,10 @@ public class Chunk : MonoBehaviour
     List<int> triangles = new List<int>();
     List<Vector2> uvs = new List<Vector2>();
     byte [,,] voxelMap = new byte[VoxelData.chunkWidth, VoxelData.chunkHeight, VoxelData.chunkWidth];
-
+    World world;
 
     void Start(){
+        world = GameObject.Find("World").GetComponent<World>();
         PopulateVoxelMap();
         CreateMeshData();
         CreateMesh();
@@ -49,7 +50,7 @@ public class Chunk : MonoBehaviour
         if(x<0 || x>=VoxelData.chunkWidth || y<0 || y>=VoxelData.chunkHeight || z<0 || z>=VoxelData.chunkWidth){
             return false;
         }
-        return World.blockTypes[voxelMap[x,y,z]].isSolid;
+        return world.blockTypes[voxelMap[x,y,z]].isSolid;
     }
 
 
@@ -62,7 +63,7 @@ public class Chunk : MonoBehaviour
                     triangles.Add(vertexIndex);
                     vertexIndex++;
                 }
-                int textureGridIndex = World.blockTypes[blockID].textureID[i];
+                int textureGridIndex = world.blockTypes[blockID].textureID[i];
                 Vector2 texturePosition = GetTextureOnAtlas(textureGridIndex);
                 //For each vertex of the face
                 for(int j=0; j<6; j++){
