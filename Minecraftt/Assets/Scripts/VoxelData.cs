@@ -4,11 +4,19 @@ using UnityEngine;
 
 public static class VoxelData
 {
-    public static readonly int chunkWidth = 5;
-    public static readonly int chunkHeight = 16;
     // Texture atlas information
     public static readonly float x_textures = 64;
     public static readonly float y_textures = 32;
+
+    // World Size Information
+    public static readonly int ChunkWidth = 5;
+    public static readonly int ChunkHeight = 16;
+    public static readonly int WorldSizeInChunks = 100;
+    public static int WorldSizeInVoxels  {
+        get {return WorldSizeInChunks * ChunkWidth;}
+    }
+
+    // Voxel Information
     public static readonly Vector3[] voxelVerts = new Vector3[8]
     {
         new Vector3(0, 0, 0),

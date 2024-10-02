@@ -337,7 +337,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7daccf230a979a942b5e136d684a852f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  material: {fileID: 0}
+  material: {fileID: 2100000, guid: d16aaff98eb25be4e82d9f5208f2e98e, type: 2}
 --- !u!4 &2053872132
 Transform:
   m_ObjectHideFlags: 0
@@ -449,8 +449,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e323c80e03afa5f459541c4b4db41b62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshRenderer: {fileID: 2064836134}
-  meshFilter: {fileID: 2064836135}
+  chunkObject1: {fileID: 0}
+  meshRenderer: {fileID: 0}
+  meshFilter: {fileID: 0}
+  vertexIndex: 0
+  vertices: []
+  triangles: 
+  uvs: []
+  world: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
