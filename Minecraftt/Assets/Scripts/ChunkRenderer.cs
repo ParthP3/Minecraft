@@ -19,7 +19,8 @@ public class ChunkRenderer
         for(int y = 0; y<chunk.ChunkHeight; y++){
             for(int x = 0; x<chunk.ChunkWidth; x++){
                 for(int z = 0; z<chunk.ChunkWidth; z++){
-                    AddVoxelDataToChunk(new Vector3(x,y,z), chunk.voxelMap[x,y,z]);
+                    if(chunk.world.blockTypes[chunk.voxelMap[x,y,z]].isSolid)
+                        AddVoxelDataToChunk(new Vector3(x,y,z), chunk.voxelMap[x,y,z]);
                 }
             }
         }

@@ -4,6 +4,9 @@ using UnityEngine;
 using System;
 
 public class World : MonoBehaviour{
+    public int seed = 11;
+    public int seedOffset;
+
     public Transform player;
     public Vector3 spawnPosition;
     public Material material;
@@ -12,6 +15,8 @@ public class World : MonoBehaviour{
     List<ChunkCoord> activeChunks = new List<ChunkCoord>(); //Size of this list doesnt exceed RenderDistance*RenderDistance*4
     ChunkCoord playerLastChunkCoord;
     public void Start(){
+        UnityEngine.Random.InitState(seed);
+        seedOffset = UnityEngine.Random.Range(1,10000);
         //setting player to main camera's transform
         player = Camera.main.transform;
         playerLastChunkCoord = GetChunkCoordFromVector3(player.position);
@@ -82,22 +87,22 @@ public class World : MonoBehaviour{
     }
 
     public byte GetBlock(Vector3 pos){
+        int yPos = Mathf.FloorToInt(pos.y);
+        //Immutable Pass for if the block is outside the world or at bedrock level
         if(!IsVoxelInWorld(pos)){
             return 0;
         }
         if(pos.y==0){
             return 4;
         }
-        else if(pos.y<6){
+        // Basic terrain pass
+        int terrainHeight = Mathf.FloorToInt(Noise.Get2DPerlin(new Vector2(pos.x, pos.z), seedOffset, 0.5f)*VoxelData.ChunkHeight);
+        if(yPos <= terrainHeight){
             return 3;
         }
-        else if(pos.y<14){
-            return 1;
+        else{
+            return 0;
         }
-        else if(pos.y==VoxelData.ChunkHeight-1){
-            return 2;
-        }
-        else return 1;
     }
 
     void CreateNewChunk(int x, int z){
