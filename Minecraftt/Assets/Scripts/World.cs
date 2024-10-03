@@ -4,32 +4,41 @@ using UnityEngine;
 using System;
 
 public class World : MonoBehaviour{
-    public int seed = 11;
+    public int seed = 3453411;
     public int seedOffset;
 
-    public Transform player;
+    public BiomeAttributes biomeAttributes;
+    public Transform playerTransform;
     public Vector3 spawnPosition;
     public Material material;
     public readonly BlockType[] blockTypes = new BlockType[256];
+
     Chunk[][] chunks;
     List<ChunkCoord> activeChunks = new List<ChunkCoord>(); //Size of this list doesnt exceed RenderDistance*RenderDistance*4
     ChunkCoord playerLastChunkCoord;
+    List<ChunkCoord> chunksToCreate = new List<ChunkCoord>();
+    private bool  isCreatingChunks;
+
     public void Start(){
         UnityEngine.Random.InitState(seed);
         seedOffset = UnityEngine.Random.Range(1,10000);
-        //setting player to main camera's transform
-        player = Camera.main.transform;
-        playerLastChunkCoord = GetChunkCoordFromVector3(player.position);
-        spawnPosition = new Vector3((VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f, VoxelData.ChunkHeight+2f, (VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f);
+        playerTransform = GameObject.Find("Player").transform;
+        playerLastChunkCoord = GetChunkCoordFromVector3(playerTransform.position);
+        spawnPosition = new Vector3((VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f, VoxelData.ChunkHeight+0.2f, (VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f);
         CreateBlockTypeData();
+        biomeAttributes.AssignLodeValues();
         GenerateWorld();
         
     }
 
     public void Update(){
-        if(!GetChunkCoordFromVector3(player.position).Equals(playerLastChunkCoord)){
+        if(!GetChunkCoordFromVector3(playerTransform.position).Equals(playerLastChunkCoord)){
             CheckRenderDistance();
-            playerLastChunkCoord = GetChunkCoordFromVector3(player.position);
+            playerLastChunkCoord = GetChunkCoordFromVector3(playerTransform.position);
+        }
+
+        if(!isCreatingChunks && chunksToCreate.Count > 0){
+            StartCoroutine("CreateChunks");
         }
     }
 
@@ -48,41 +57,66 @@ public class World : MonoBehaviour{
         }
         for(int x = Math.Max(0, VoxelData.WorldSizeInChunks/2 - PlayerSettings.RenderDistance); x<Math.Min(VoxelData.WorldSizeInChunks, VoxelData.WorldSizeInChunks/2+PlayerSettings.RenderDistance); x++){
             for(int z = Math.Max(0, VoxelData.WorldSizeInChunks/2 - PlayerSettings.RenderDistance); z<Math.Min(VoxelData.WorldSizeInChunks, VoxelData.WorldSizeInChunks/2+PlayerSettings.RenderDistance); z++){
-                CreateNewChunk(x,z);
+                chunks[x][z] = new Chunk(new ChunkCoord(x,z), this, true);
+                activeChunks.Add(new ChunkCoord(x,z));
             }
         }
-        player.position = spawnPosition;
+        playerTransform.position = spawnPosition;
     }
 
-    ChunkCoord GetChunkCoordFromVector3(Vector3 pos){
-        int x = Mathf.FloorToInt(pos.x/VoxelData.ChunkWidth);
-        int z = Mathf.FloorToInt(pos.z/VoxelData.ChunkWidth);
-        return new ChunkCoord(x,z);
+    IEnumerator CreateChunks(){
+        isCreatingChunks = true;
+        while(chunksToCreate.Count > 0){
+            int popPosition = chunksToCreate.Count - 1;
+            chunks[chunksToCreate[popPosition].x][chunksToCreate[popPosition].z].Init();
+            chunksToCreate.RemoveAt(popPosition);
+            yield return null;
+        }
+
+        isCreatingChunks = false;
     }
+
+
 
     void CheckRenderDistance(){
-        ChunkCoord coord = GetChunkCoordFromVector3(player.position);
+        ChunkCoord coord = GetChunkCoordFromVector3(playerTransform.position);
         for(int x = coord.x-PlayerSettings.RenderDistance; x<coord.x + PlayerSettings.RenderDistance; x++){
             for(int z = coord.z-PlayerSettings.RenderDistance; z<coord.z + PlayerSettings.RenderDistance; z++){
                 if(IsChunkInWorld(new ChunkCoord(x,z))){
                     if(chunks[x][z] == null){
-                        CreateNewChunk(x,z);
+                        chunks[x][z] = new Chunk(new ChunkCoord(x,z), this, false);
+                        chunksToCreate.Add(new ChunkCoord(x, z));
                     }
                     else if(!chunks[x][z].isActive){
                         chunks[x][z].isActive = true;
-                        activeChunks.Add(new ChunkCoord(x,z));
+                        
                     }
+                    activeChunks.Add(new ChunkCoord(x,z));
                 }
             }
         }
         for(int i =0; i<activeChunks.Count; i++){
             if((Mathf.Abs(activeChunks[i].x - coord.x) > PlayerSettings.RenderDistance) || (Mathf.Abs(activeChunks[i].z - coord.z) > PlayerSettings.RenderDistance)){
                 chunks[activeChunks[i].x][activeChunks[i].z].isActive = false;
-                chunks[activeChunks[i].x][activeChunks[i].z] = null;
+                ///chunks[activeChunks[i].x][activeChunks[i].z] = null;
                 activeChunks.RemoveAt(i);
                 i--;
             }
         }
+
+    }
+
+    public bool CheckForVoxel(float _x, float _y, float _z){
+        Vector3 pos = new Vector3(_x, _y, _z);
+        ChunkCoord thisChunk = new ChunkCoord(pos);
+        if(!IsVoxelInWorld(pos)){
+            return false;
+        }
+        if(chunks[thisChunk.x][thisChunk.z] != null && chunks[thisChunk.x][thisChunk.z].isVoxelMapPopulated){
+            return blockTypes[chunks[thisChunk.x][thisChunk.z].GetVoxelFromGlobalPosition(pos)].isSolid;
+        }
+
+        return blockTypes[GetBlock(pos)].isSolid;
 
     }
 
@@ -95,38 +129,70 @@ public class World : MonoBehaviour{
         if(pos.y==0){
             return 4;
         }
+   
         // Basic terrain pass
-        int terrainHeight = Mathf.FloorToInt(Noise.Get2DPerlin(new Vector2(pos.x, pos.z), seedOffset, 0.5f)*VoxelData.ChunkHeight);
-        if(yPos <= terrainHeight){
-            return 3;
+        int terrainHeight = Mathf.FloorToInt(biomeAttributes.solidGroundHeight+Noise.Get2DPerlin(new Vector2(pos.x, pos.z), seedOffset, biomeAttributes.terrainScale)*biomeAttributes.maxHeightFromSolidGround);
+        byte voxelValue = 0;
+        if(yPos == terrainHeight){
+            voxelValue = 2;
+        }
+        else if(yPos < terrainHeight && yPos > biomeAttributes.solidGroundHeight){
+            voxelValue = 1;
+        }
+        else if(yPos <= biomeAttributes.solidGroundHeight){
+            voxelValue = 3;
         }
         else{
             return 0;
         }
+
+        // Second pass
+        if(voxelValue == 3){
+            for(int i = 0; i<biomeAttributes.lodes.Length; i++){
+                if(yPos > biomeAttributes.lodes[i].minHeight && yPos < biomeAttributes.lodes[i].maxHeight){
+                    if(Noise.Get3DPerlin(pos, biomeAttributes.lodes[i].noiseOffset, biomeAttributes.lodes[i].scale, biomeAttributes.lodes[i].threshold)){
+                        voxelValue = biomeAttributes.lodes[i].blockID;
+                    }
+                }
+            }
+        }
+        return voxelValue;
     }
 
-    void CreateNewChunk(int x, int z){
-        chunks[x][z] = new Chunk(new ChunkCoord(x,z), this);
-        activeChunks.Add(new ChunkCoord(x,z));
-    }
+
     
-    bool IsChunkInWorld(ChunkCoord coord){
+    public bool IsChunkInWorld(ChunkCoord coord){
         return (coord.x >= 0 && coord.x < VoxelData.WorldSizeInChunks && coord.z >= 0 && coord.z < VoxelData.WorldSizeInChunks);
     }
 
-    bool IsVoxelInWorld(Vector3 pos){
+    public bool IsVoxelInWorld(Vector3 pos){
         return (pos.x >= 0 && pos.x < VoxelData.WorldSizeInVoxels && pos.y >= 0 && pos.y < VoxelData.ChunkHeight && pos.z >= 0 && pos.z < VoxelData.WorldSizeInVoxels);
     }
 
-
-    public class BlockType{
-        public string blockName;
-        public bool isSolid;
-        public int[] textureID = new int[6]; //left, right, top, bottom, back, front  respectively
-        public BlockType(string _blockName, bool _isSolid, int[] textures){
-            blockName = _blockName;
-            isSolid = _isSolid;
-            textureID = textures;
-        }
+    ChunkCoord GetChunkCoordFromVector3(Vector3 pos){
+        int x = Mathf.FloorToInt(pos.x/VoxelData.ChunkWidth);
+        int z = Mathf.FloorToInt(pos.z/VoxelData.ChunkWidth);
+        return new ChunkCoord(x,z);
     }
+
+
+    
+}
+public class BlockType{
+    public string blockName;
+    public bool isSolid;
+    public int[] textureID = new int[6]; //left, right, top, bottom, back, front  respectively
+    public BlockType(string _blockName, bool _isSolid, int[] textures){
+        blockName = _blockName;
+        isSolid = _isSolid;
+        textureID = textures;
+    }
+}
+
+public enum BlockEnum{
+    Air,
+    Dirt,
+    Grass_Block,
+    Cobblestone,
+    Bedrock
 }
