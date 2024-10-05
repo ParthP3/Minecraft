@@ -13,6 +13,8 @@ public class Chunk
 
     public List <Vector3> vertices = new List<Vector3>();
     public List<int> triangles = new List<int>();
+    public List<int> transparentTriangles = new List<int>();
+    Material[] materials = new Material[2];
     public List<Vector2> uvs = new List<Vector2>();
     int vertexIndex = 0;
     public byte [,,] voxelMap;
@@ -30,7 +32,9 @@ public class Chunk
         chunkObject = new GameObject();
         meshFilter = chunkObject.AddComponent<MeshFilter>();
         meshRenderer = chunkObject.AddComponent<MeshRenderer>();
-        meshRenderer.material = world.material;
+        materials[0] = world.material;
+        materials[1] = world.transparentMaterial;
+        meshRenderer.materials = materials;
         chunkObject.transform.SetParent(world.transform);
         chunkObject.transform.position = new Vector3(coord.x * ChunkWidth, 0f, coord.z * ChunkWidth);
         chunkObject.name = "Chunk " + coord.x + ", " + coord.z;
@@ -80,7 +84,7 @@ public class Chunk
         for(int y = 0; y<ChunkHeight; y++){
             for(int x = 0; x<ChunkWidth; x++){
                 for(int z = 0; z<ChunkWidth; z++){
-                    if(world.blockTypes[voxelMap[x,y,z]].isSolid)
+                    if(BlockTypes.blockTypes[voxelMap[x,y,z]].isSolid)
                         UpdateMeshData(new Vector3(x,y,z), voxelMap[x,y,z]);
                 }
             }
@@ -127,23 +131,27 @@ public class Chunk
         int x = (int)(pos.x);
         int y = (int)(pos.y);
         int z = (int)(pos.z);
-        if(!IsVoxelInChunk(x,y,z)){return !world.CheckForVoxel(pos.x + position.x, pos.y+position.y, pos.z + position.z);}
-        return !world.blockTypes[voxelMap[x,y,z]].isSolid;
+        if(!IsVoxelInChunk(x,y,z)){return !world.checkTransparent(pos.x + position.x, pos.y+position.y, pos.z + position.z);}
+        return !BlockTypes.blockTypes[voxelMap[x,y,z]].isTransparent;
     }
 
     
 
     void UpdateMeshData(Vector3 blockPosition, int blockID){
         //For each face of the block
+        bool isTransparent = BlockTypes.blockTypes[blockID].isTransparent;
         for(int i = 0; i<6; i++){
-            if(CheckVoxel(blockPosition + VoxelData.faceChecks[i])){
+            if(!CheckVoxel(blockPosition + VoxelData.faceChecks[i])){
                 // For each vertex of the face 
                 for(int j=0; j<6; j++){
                     vertices.Add(VoxelData.voxelVerts[VoxelData.voxelTris[i, VoxelData.TriangleVertexIndices[j]]]+blockPosition);
-                    triangles.Add(vertexIndex);
+                    if(isTransparent){
+                        transparentTriangles.Add(vertexIndex);
+                    }
+                    else triangles.Add(vertexIndex);
                     vertexIndex++;
                 }
-                int textureGridIndex = world.blockTypes[blockID].textureID[i];
+                int textureGridIndex = BlockTypes.blockTypes[blockID].textureID[i];
                 Vector2 texturePosition = GetTextureOnAtlas(textureGridIndex);
                 //For each vertex of the face
                 for(int j=0; j<6; j++){
@@ -156,7 +164,9 @@ public class Chunk
     void CreateMesh(){
         Mesh mesh = new Mesh ();
         mesh.vertices = vertices.ToArray();
-        mesh.triangles = triangles.ToArray();
+        mesh.subMeshCount = 2;
+        mesh.SetTriangles(triangles.ToArray(), 0);
+        mesh.SetTriangles(transparentTriangles.ToArray(), 1);
         mesh.uv = uvs.ToArray();
         mesh.RecalculateNormals();
         meshFilter.mesh = mesh;

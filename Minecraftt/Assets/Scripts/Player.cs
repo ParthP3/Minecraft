@@ -55,7 +55,6 @@ public class Player : MonoBehaviour
     public Transform highlightBlock;
     public Transform playerHand;
 
-    public Text selectedBlockText;
     public byte selectedBlockIndex;
 
     public void SetValues(){
@@ -115,8 +114,6 @@ public class Player : MonoBehaviour
         highlightBlock = GameObject.Find("HighLightBlock").transform;
         playerHand = GameObject.Find("PlaceHighLightBlock").transform;
         Cursor.lockState = CursorLockMode.Locked;
-        selectedBlockText = GameObject.Find("SelectedBlockText").GetComponent<Text>();
-        selectedBlockText.text = "Selected block: " + world.blockTypes[selectedBlockIndex].blockName;
     }
 
     private void Update(){
@@ -164,22 +161,6 @@ public class Player : MonoBehaviour
                     isSprinting = false;
                 }
             }
-        }
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if(scroll != 0){
-            if(scroll > 0){
-                selectedBlockIndex++;
-            }
-            else{
-                selectedBlockIndex--;
-            }
-            if(selectedBlockIndex > 4){
-                selectedBlockIndex = (byte)1;
-            }
-            if(selectedBlockIndex < 1){
-                selectedBlockIndex = (byte)4;
-            }
-            selectedBlockText.text = "Selected block: " + world.blockTypes[selectedBlockIndex].blockName;
         }
 
         if(highlightBlock.gameObject.activeSelf){

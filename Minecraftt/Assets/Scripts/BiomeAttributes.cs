@@ -13,11 +13,11 @@ public class BiomeAttributes : ScriptableObject {
 
     public void AssignLodeValues(){
         lodes = new Lode[5];
-        lodes[0] = new Lode("Air", (byte)BlockEnum.Air, 2, 255, 0.1f, 0.53f, 23);
-        lodes[1] = new Lode("Dirt", (byte)BlockEnum.Dirt, 0, 255, 0.2f, 0.6f, 500);
-        lodes[2] = new Lode("Grass_Block", (byte)BlockEnum.Grass_Block, solidGroundHeight, 255, 0.1f, 0.6f, 255);
-        lodes[3] = new Lode("Cobblestone", (byte)BlockEnum.Cobblestone, 1, 50, 0.2f, 0.6f, 255);
-        lodes[4] = new Lode("Bedrock", (byte)BlockEnum.Bedrock, 0, 2, 10, 0.1f, 255);
+        lodes[0] = new Lode("air", (byte)BlockEnum.air, 2, 255, 0.1f, 0.53f, 23);
+        lodes[1] = new Lode("dirt", (byte)BlockEnum.dirt, 0, 255, 0.2f, 0.6f, 500);
+        lodes[2] = new Lode("grass", (byte)BlockEnum.grass, solidGroundHeight, 255, 0.1f, 0.6f, 255);
+        lodes[3] = new Lode("cobblestone", (byte)BlockEnum.cobblestone, 1, 50, 0.2f, 0.6f, 255);
+        lodes[4] = new Lode("bedrock", (byte)BlockEnum.bedrock, 0, 2, 10, 0.1f, 255);
     }
 
 }

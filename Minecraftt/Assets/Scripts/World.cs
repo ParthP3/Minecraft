@@ -11,7 +11,7 @@ public class World : MonoBehaviour{
     public Transform playerTransform;
     public Vector3 spawnPosition;
     public Material material;
-    public readonly BlockType[] blockTypes = new BlockType[256];
+    public Material transparentMaterial;
 
     Chunk[][] chunks;
     List<ChunkCoord> activeChunks = new List<ChunkCoord>(); //Size of this list doesnt exceed RenderDistance*RenderDistance*4
@@ -27,8 +27,8 @@ public class World : MonoBehaviour{
         playerTransform = GameObject.Find("Player").transform;
         playerLastChunkCoord = GetChunkCoordFromVector3(playerTransform.position);
         spawnPosition = new Vector3((VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f, VoxelData.ChunkHeight+0.2f, (VoxelData.WorldSizeInChunks*VoxelData.ChunkWidth) / 2f);
-        CreateBlockTypeData();
         biomeAttributes.AssignLodeValues();
+        //toolbar.CreateToolbar();
         GenerateWorld();
         debugScreen.SetActive(false);
         
@@ -47,14 +47,6 @@ public class World : MonoBehaviour{
         if (Input.GetKeyDown(KeyCode.F3)){
             debugScreen.SetActive(!debugScreen.activeSelf);
         }
-    }
-
-    public void CreateBlockTypeData(){
-        blockTypes[0] = new BlockType("Air", false, new int[6]{0,0,0,0,0,0});
-        blockTypes[1] = new BlockType("Dirt", true, new int [6]{1099, 1099, 1099, 1099, 1099, 1099});
-        blockTypes[2] = new BlockType("Grass_Block", true, new int[6]{1109,1109,1045,1099,1109,1109});
-        blockTypes[3] = new BlockType("Cobblestone", true, new int[6]{1101, 1101, 1101, 1101, 1101, 1101});
-        blockTypes[4] = new BlockType("Bedrock", true, new int[6]{1995, 1995, 1995, 1995, 1995, 1995});
     }
 
     void GenerateWorld(){
@@ -121,11 +113,24 @@ public class World : MonoBehaviour{
             return false;
         }
         if(chunks[thisChunk.x][thisChunk.z] != null && chunks[thisChunk.x][thisChunk.z].isVoxelMapPopulated){
-            return blockTypes[chunks[thisChunk.x][thisChunk.z].GetVoxelFromGlobalPosition(pos)].isSolid;
+            return BlockTypes.blockTypes[chunks[thisChunk.x][thisChunk.z].GetVoxelFromGlobalPosition(pos)].isSolid;
         }
 
-        return blockTypes[GetBlock(pos)].isSolid;
+        return BlockTypes.blockTypes[GetBlock(pos)].isSolid;
 
+    }
+
+    public bool checkTransparent(float _x, float _y, float _z){
+        Vector3 pos = new Vector3(_x, _y, _z);
+        ChunkCoord thisChunk = new ChunkCoord(pos);
+        if(!IsVoxelInWorld(pos)){
+            return false;
+        }
+        if(chunks[thisChunk.x][thisChunk.z] != null && chunks[thisChunk.x][thisChunk.z].isVoxelMapPopulated){
+            return BlockTypes.blockTypes[chunks[thisChunk.x][thisChunk.z].GetVoxelFromGlobalPosition(pos)].isTransparent;
+        }
+
+        return BlockTypes.blockTypes[GetBlock(pos)].isTransparent;
     }
 
     public byte GetBlock(Vector3 pos){
@@ -192,21 +197,7 @@ public class World : MonoBehaviour{
 
     
 }
-public class BlockType{
-    public string blockName;
-    public bool isSolid;
-    public int[] textureID = new int[6]; //left, right, top, bottom, back, front  respectively
-    public BlockType(string _blockName, bool _isSolid, int[] textures){
-        blockName = _blockName;
-        isSolid = _isSolid;
-        textureID = textures;
-    }
-}
 
-public enum BlockEnum{
-    Air,
-    Dirt,
-    Grass_Block,
-    Cobblestone,
-    Bedrock
-}
+
+
+
