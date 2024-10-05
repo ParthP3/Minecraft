@@ -24,14 +24,6 @@ public class Chunk
         world = _world;
         coord = _coord;
         isActive = true;
-
-        if (generateOnLoad){
-            Init();
-        }
-        
-    }
-
-    public void Init(){
         ChunkWidth = VoxelData.ChunkWidth;
         ChunkHeight = VoxelData.ChunkHeight;
         voxelMap = new byte[ChunkWidth, ChunkHeight, ChunkWidth];
@@ -43,6 +35,13 @@ public class Chunk
         chunkObject.transform.position = new Vector3(coord.x * ChunkWidth, 0f, coord.z * ChunkWidth);
         chunkObject.name = "Chunk " + coord.x + ", " + coord.z;
 
+        if (generateOnLoad){
+            Init();
+        }
+        
+    }
+
+    public void Init(){
         PopulateVoxelMap();
         RenderChunk();
     }
@@ -73,17 +72,48 @@ public class Chunk
     }
 
     public void RenderChunk(){
-        CreateMeshData();
-        CreateMesh();
+        UpdateChunk();
     }
 
-    void CreateMeshData(){
+    void UpdateChunk(){
+        ClearMeshData();
         for(int y = 0; y<ChunkHeight; y++){
             for(int x = 0; x<ChunkWidth; x++){
                 for(int z = 0; z<ChunkWidth; z++){
                     if(world.blockTypes[voxelMap[x,y,z]].isSolid)
-                        AddVoxelDataToChunk(new Vector3(x,y,z), voxelMap[x,y,z]);
+                        UpdateMeshData(new Vector3(x,y,z), voxelMap[x,y,z]);
                 }
+            }
+        }
+        CreateMesh();
+    }
+
+    void ClearMeshData(){
+        vertices.Clear();
+        triangles.Clear();
+        uvs.Clear();
+        vertexIndex = 0;
+    }
+
+    public void EditVoxel(Vector3 pos, byte newID){
+        int xCheck = (int)(pos.x);
+        int yCheck = (int)(pos.y);
+        int zCheck = (int)(pos.z);
+        xCheck -= (int)(chunkObject.transform.position.x);
+        zCheck -= (int)(chunkObject.transform.position.z);
+        voxelMap[xCheck, yCheck, zCheck] = newID;
+        
+        UpdateChunk();
+        UpdateSurroundingVoxels(xCheck, yCheck, zCheck);
+
+    }
+
+    void UpdateSurroundingVoxels(int x, int y, int z){
+        Vector3 thisVoxel = new Vector3(x,y,z);
+        for(int p = 0; p<6; p++){
+            Vector3 currentVoxel = thisVoxel + VoxelData.faceChecks[p];
+            if(!IsVoxelInChunk((int)currentVoxel.x, (int)currentVoxel.y, (int)currentVoxel.z)){
+                world.GetChunkFromVector3(currentVoxel + position).UpdateChunk();
             }
         }
     }
@@ -94,16 +124,16 @@ public class Chunk
     
 
     public bool CheckVoxel(Vector3 pos){
-        int x = Mathf.FloorToInt(pos.x);
-        int y = Mathf.FloorToInt(pos.y);
-        int z = Mathf.FloorToInt(pos.z);
+        int x = (int)(pos.x);
+        int y = (int)(pos.y);
+        int z = (int)(pos.z);
         if(!IsVoxelInChunk(x,y,z)){return !world.CheckForVoxel(pos.x + position.x, pos.y+position.y, pos.z + position.z);}
         return !world.blockTypes[voxelMap[x,y,z]].isSolid;
     }
 
     
 
-    void AddVoxelDataToChunk(Vector3 blockPosition, int blockID){
+    void UpdateMeshData(Vector3 blockPosition, int blockID){
         //For each face of the block
         for(int i = 0; i<6; i++){
             if(CheckVoxel(blockPosition + VoxelData.faceChecks[i])){
@@ -139,11 +169,11 @@ public class Chunk
     }
 
     public byte GetVoxelFromGlobalPosition( Vector3 pos){
-        int xCheck = Mathf.FloorToInt(pos.x);
-        int yCheck = Mathf.FloorToInt(pos.y);
-        int zCheck = Mathf.FloorToInt(pos.z);
-        xCheck -= Mathf.FloorToInt(chunkObject.transform.position.x);
-        zCheck -= Mathf.FloorToInt(chunkObject.transform.position.z);
+        int xCheck = (int)(pos.x);
+        int yCheck = (int)(pos.y);
+        int zCheck = (int)(pos.z);
+        xCheck -= (int)(chunkObject.transform.position.x);
+        zCheck -= (int)(chunkObject.transform.position.z);
 
         return voxelMap[xCheck, yCheck, zCheck];
     }
@@ -162,8 +192,8 @@ public class ChunkCoord{
         z = _z;
     }
     public ChunkCoord(Vector3 pos){
-        int xCheck = Mathf.FloorToInt(pos.x);
-        int zCheck = Mathf.FloorToInt(pos.z);
+        int xCheck = (int)(pos.x);
+        int zCheck = (int)(pos.z);
         x = xCheck / VoxelData.ChunkWidth;
         z = zCheck / VoxelData.ChunkWidth;
     }

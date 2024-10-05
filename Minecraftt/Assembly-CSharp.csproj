@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\VoxelData.cs" />
     <Compile Include="Assets\Scripts\Player.cs" />
     <Compile Include="Assets\Scripts\PlayerSettings.cs" />
+    <Compile Include="Assets\Scripts\DebugScreen.cs" />
     <Compile Include="Assets\Scripts\ChunkRenderer.cs" />
   </ItemGroup>
   <ItemGroup>

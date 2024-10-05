@@ -4,5 +4,5 @@ using UnityEngine;
 
 public static class PlayerSettings
 {
-    public static int RenderDistance = 10;
+    public static int RenderDistance = 5;
 }

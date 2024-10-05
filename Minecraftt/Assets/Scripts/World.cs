@@ -19,6 +19,8 @@ public class World : MonoBehaviour{
     List<ChunkCoord> chunksToCreate = new List<ChunkCoord>();
     private bool  isCreatingChunks;
 
+    public GameObject debugScreen;
+
     public void Start(){
         UnityEngine.Random.InitState(seed);
         seedOffset = UnityEngine.Random.Range(1,10000);
@@ -28,6 +30,7 @@ public class World : MonoBehaviour{
         CreateBlockTypeData();
         biomeAttributes.AssignLodeValues();
         GenerateWorld();
+        debugScreen.SetActive(false);
         
     }
 
@@ -39,6 +42,10 @@ public class World : MonoBehaviour{
 
         if(!isCreatingChunks && chunksToCreate.Count > 0){
             StartCoroutine("CreateChunks");
+        }
+
+        if (Input.GetKeyDown(KeyCode.F3)){
+            debugScreen.SetActive(!debugScreen.activeSelf);
         }
     }
 
@@ -64,6 +71,7 @@ public class World : MonoBehaviour{
         playerTransform.position = spawnPosition;
     }
 
+    // IEnumerator allows the function to be paused and resumed at will
     IEnumerator CreateChunks(){
         isCreatingChunks = true;
         while(chunksToCreate.Count > 0){
@@ -121,7 +129,7 @@ public class World : MonoBehaviour{
     }
 
     public byte GetBlock(Vector3 pos){
-        int yPos = Mathf.FloorToInt(pos.y);
+        int yPos = (int)(pos.y);
         //Immutable Pass for if the block is outside the world or at bedrock level
         if(!IsVoxelInWorld(pos)){
             return 0;
@@ -131,7 +139,7 @@ public class World : MonoBehaviour{
         }
    
         // Basic terrain pass
-        int terrainHeight = Mathf.FloorToInt(biomeAttributes.solidGroundHeight+Noise.Get2DPerlin(new Vector2(pos.x, pos.z), seedOffset, biomeAttributes.terrainScale)*biomeAttributes.maxHeightFromSolidGround);
+        int terrainHeight = (int)(biomeAttributes.solidGroundHeight+Noise.Get2DPerlin(new Vector2(pos.x, pos.z), seedOffset, biomeAttributes.terrainScale)*biomeAttributes.maxHeightFromSolidGround);
         byte voxelValue = 0;
         if(yPos == terrainHeight){
             voxelValue = 2;
@@ -169,9 +177,15 @@ public class World : MonoBehaviour{
         return (pos.x >= 0 && pos.x < VoxelData.WorldSizeInVoxels && pos.y >= 0 && pos.y < VoxelData.ChunkHeight && pos.z >= 0 && pos.z < VoxelData.WorldSizeInVoxels);
     }
 
-    ChunkCoord GetChunkCoordFromVector3(Vector3 pos){
-        int x = Mathf.FloorToInt(pos.x/VoxelData.ChunkWidth);
-        int z = Mathf.FloorToInt(pos.z/VoxelData.ChunkWidth);
+    public Chunk GetChunkFromVector3(Vector3 pos){
+        int x = (int)(pos.x/VoxelData.ChunkWidth);
+        int z = (int)(pos.z/VoxelData.ChunkWidth);
+        return chunks[x][z];
+    }
+
+    public ChunkCoord GetChunkCoordFromVector3(Vector3 pos){
+        int x = (int)(pos.x/VoxelData.ChunkWidth);
+        int z = (int)(pos.z/VoxelData.ChunkWidth);
         return new ChunkCoord(x,z);
     }
 
