@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;   
 
+namespace minecraft{
+
 public class DebugScreen : MonoBehaviour
 {
     World world;
@@ -11,6 +13,7 @@ public class DebugScreen : MonoBehaviour
     float timer; 
     float halfWorldSizeInVoxels = VoxelData.WorldSizeInVoxels / 2f;
     float bottomY = -64;
+
 
     void Start()
     {
@@ -30,7 +33,7 @@ public class DebugScreen : MonoBehaviour
         float z_angle = world.playerTransform.eulerAngles.z;
         debugText += "Player Position: X " + (x_coord - halfWorldSizeInVoxels)+ ", Y " + (y_coord - bottomY)+ ", Z " + (z_coord - halfWorldSizeInVoxels)+ "\n";
         debugText += "Player Rotation: " + x_angle + ", " + y_angle + ", " + z_angle + "\n";
-        debugText += "Chunk: " + world.GetChunkCoordFromVector3(world.playerTransform.position) + "\n";
+        debugText += "Chunk: " + HelperFunctions.GetChunkCoordFromGlobalPos(world.playerTransform.position).x+", "+ HelperFunctions.GetChunkCoordFromGlobalPos(world.playerTransform.position).z  + "\n";
         int facing;
         if(x_angle > 45 && x_angle < 135){
             facing = 0;
@@ -85,4 +88,6 @@ public class DebugScreen : MonoBehaviour
         debugText += "FPS: " + frameRate + "\n";
         text.text = debugText;
     }
+}
+
 }

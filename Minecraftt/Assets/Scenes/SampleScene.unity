@@ -1076,6 +1076,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 744987510}
   m_CullTransparentMesh: 1
+--- !u!1 &863518965
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 863518967}
+  - component: {fileID: 863518966}
+  m_Layer: 0
+  m_Name: Game
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &863518966
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 863518965}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c33ffa368dcc2bf428a35af30d6f0ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GeneratedSpawn: 0
+--- !u!4 &863518967
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 863518965}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 406.15778, y: 449.4615, z: 398.7731}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &910425472
 GameObject:
   m_ObjectHideFlags: 0
@@ -1329,7 +1374,7 @@ GameObject:
   - component: {fileID: 987842323}
   - component: {fileID: 987842325}
   m_Layer: 5
-  m_Name: Debug Screen
+  m_Name: DebugScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1624,6 +1669,7 @@ MonoBehaviour:
   - itemID: 1
     icon: {fileID: 695704938}
   mySprites: []
+  player: {fileID: 0}
 --- !u!114 &1517448539 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8838477475943253911, guid: 9457a0699a03af747aa4feb6e1ab4986, type: 3}
@@ -2084,7 +2130,7 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   spawnPosition: {x: 0, y: 0, z: 0}
   material: {fileID: 2100000, guid: d16aaff98eb25be4e82d9f5208f2e98e, type: 2}
-  debugScreen: {fileID: 987842321}
+  transparentMaterial: {fileID: 2100000, guid: 0ed4b7ebf5cd47345b7ab906b9088e4d, type: 2}
 --- !u!4 &2053872132
 Transform:
   m_ObjectHideFlags: 0
@@ -2154,6 +2200,7 @@ MonoBehaviour:
   interactRange: 8
   checkIncrement: 0.1
   checkIncrementSide: 0.1
+  blockPlaceFreqLimiter: 0
   maxAngle: 50
   fallMultiplier: 2.5
   lowJumpMultiplier: 2
@@ -2166,6 +2213,8 @@ MonoBehaviour:
   isSprinting: 0
   keepSprint: 0
   isCrouched: 0
+  toPlaceBlock: 0
+  toDestroyBlock: 0
   sensitivity: 2
   sprintSpeed: 7
   normalSpeed: 5
@@ -2188,6 +2237,7 @@ MonoBehaviour:
   climbGravity: 9.8
   highlightBlock: {fileID: 423899880}
   playerHand: {fileID: 493944103}
+  debugScreen: {fileID: 0}
   selectedBlockIndex: 0
 --- !u!1001 &2115944819
 PrefabInstance:
@@ -2424,3 +2474,4 @@ SceneRoots:
   - {fileID: 678143072}
   - {fileID: 423899880}
   - {fileID: 493944103}
+  - {fileID: 863518967}

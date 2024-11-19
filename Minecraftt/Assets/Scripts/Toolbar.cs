@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace minecraft{
+
 public class Toolbar : MonoBehaviour
 {
     public RectTransform highlight;
@@ -106,4 +108,6 @@ public class Toolbar : MonoBehaviour
 public class ItemSlot{
     public byte itemID;
     public Image icon;
+}
+
 }

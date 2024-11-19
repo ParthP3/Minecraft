@@ -4,6 +4,8 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace minecraft{
+
 public class Player : MonoBehaviour
 {
     public float horizontal;
@@ -18,6 +20,7 @@ public class Player : MonoBehaviour
     public float interactRange;
     public float checkIncrement;
     public float checkIncrementSide;
+    public float blockPlaceFreqLimiter;
     public float maxAngle;
     public float fallMultiplier;
     public float lowJumpMultiplier;
@@ -30,6 +33,8 @@ public class Player : MonoBehaviour
     public bool isSprinting;
     public bool keepSprint;
     public bool isCrouched;
+    public bool toPlaceBlock;
+    public bool toDestroyBlock;
 
     public float sensitivity;
     public float sprintSpeed;
@@ -54,6 +59,9 @@ public class Player : MonoBehaviour
 
     public Transform highlightBlock;
     public Transform playerHand;
+    Transform cameraAngle;
+    public GameObject debugScreen;
+
 
     public byte selectedBlockIndex;
 
@@ -71,6 +79,8 @@ public class Player : MonoBehaviour
         isSprinting = false;
         keepSprint = false;
         isCrouched = false;
+        toPlaceBlock = false;
+        toDestroyBlock = false;
 
         sensitivity = 2;
         sprintSpeed = 10;
@@ -101,6 +111,7 @@ public class Player : MonoBehaviour
         climbGravity = 9.8f;
 
         checkIncrement = 0.1f;
+        blockPlaceFreqLimiter = 0.0f;
         selectedBlockIndex = 1;
 
 
@@ -111,23 +122,16 @@ public class Player : MonoBehaviour
         SetValues();
         world = GameObject.Find("World").GetComponent<World>();
         playerCam = GameObject.Find("Main Camera").transform;
+        cameraAngle = new GameObject().transform;
+        cameraAngle.eulerAngles = playerCam.eulerAngles;
         highlightBlock = GameObject.Find("HighLightBlock").transform;
         playerHand = GameObject.Find("PlaceHighLightBlock").transform;
         Cursor.lockState = CursorLockMode.Locked;
+        debugScreen = GameObject.Find("DebugScreen");
+        debugScreen.SetActive(false);
     }
 
-    private void Update(){
-        GetPlayerInput();
-        CalculateVelocity();
-        transform.Rotate(Vector3.up * mouseX * sensitivity);
-        playerCam.Rotate(Vector3.right * -mouseY * sensitivity);
-        transform.Translate(velocity, Space.World);
-        translatePlayerCamToPlayerHeight();
-        placeCursorBlocks();
-        
-    }
-
-    private void GetPlayerInput(){
+    public void getInput(){
         horizontal = Input.GetAxis("Horizontal");
         vertical = Input.GetAxis("Vertical"); //Vertical not to be confused with up and down. vertical is in z axis, up and down is in y axis
         mouseX = Input.GetAxis("Mouse X");
@@ -156,35 +160,71 @@ public class Player : MonoBehaviour
                 }
             }
             else{
-                // stop sprinting only if player stops moving forward
                 if(vertical == 0){
                     isSprinting = false;
                 }
             }
         }
 
+        placeCursorBlocks();
+
         if(highlightBlock.gameObject.activeSelf){
             if(Input.GetMouseButtonDown(0)){
-                world.GetChunkFromVector3(highlightBlock.position).EditVoxel(highlightBlock.position, 0);
+                toDestroyBlock = true;
+                
             }
-            if(Input.GetMouseButtonDown(1)){
-                if(selectedBlockIndex != 0){
-                    // Don't place block on the player
-                    if (playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)transform.position.z) &&
-                        playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)transform.position.z) &&
-                        playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)transform.position.z) &&
-                        playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
-                        playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)(transform.position.z - playerWidth)) &&
-                        playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
-                        playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
-                        playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)(transform.position.z - playerWidth)) &&
-                        playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)(transform.position.z - playerWidth))){
-                        world.GetChunkFromVector3(playerHand.position).EditVoxel(playerHand.position, selectedBlockIndex);
+            if(Input.GetMouseButton(1)){
+                if(blockPlaceFreqLimiter > 0.1f){
+                    if(selectedBlockIndex != 0){
+                        toPlaceBlock = true;
                     }
+                blockPlaceFreqLimiter = 0;
+                }
+                else{
+                    blockPlaceFreqLimiter += Time.deltaTime;
                 }
             }
         }
+        if (Input.GetKeyDown(KeyCode.F3)){
+            debugScreen.SetActive(!debugScreen.activeSelf);
+        }
         
+    }
+
+    public void processInput(){
+        CalculateVelocity();
+        transform.Rotate(Vector3.up * mouseX * sensitivity);
+        playerCam.Rotate(Vector3.right * -mouseY * sensitivity);
+        transform.Translate(velocity, Space.World);
+        if(toPlaceBlock){
+            placeBlock();
+            toPlaceBlock = false;
+        }
+        if(toDestroyBlock){
+            destroyBlock();
+            toDestroyBlock = false;
+        }
+        translatePlayerCamToPlayerHeight();
+    }
+
+    private void placeBlock(){
+        if (playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)transform.position.z) &&
+            playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)transform.position.z) &&
+            playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)transform.position.z) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)transform.position.z) &&
+            playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
+            playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)transform.position.x, (int)transform.position.y+1, (int)(transform.position.z - playerWidth)) &&
+            playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
+            playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)(transform.position.z + playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)(transform.position.z + playerWidth)) &&
+            playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x + playerWidth), (int)transform.position.y+1, (int)(transform.position.z - playerWidth)) &&
+            playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y, (int)(transform.position.z - playerWidth)) && playerHand.position != new Vector3((int)(transform.position.x - playerWidth), (int)transform.position.y+1, (int)(transform.position.z - playerWidth))){
+            if(playerHand.position.y < VoxelData.ChunkHeight - 1){
+                world.GetChunkFromVector3(playerHand.position).EditVoxel(playerHand.position, selectedBlockIndex);
+            }
+        }
+    }
+
+    private void destroyBlock(){
+        world.GetChunkFromVector3(highlightBlock.position).EditVoxel(highlightBlock.position, 0);
     }
 
     private void placeCursorBlocks(){
@@ -385,5 +425,6 @@ public class Player : MonoBehaviour
             return 0;
         }
     }
+}
 }
 

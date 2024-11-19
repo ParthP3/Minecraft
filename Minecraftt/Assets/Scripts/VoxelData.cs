@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+namespace minecraft{
+
 public static class VoxelData
 {
     // Texture atlas information
@@ -55,4 +57,5 @@ public static class VoxelData
         new Vector2(1f/x_textures, 0f/y_textures),
         new Vector2(1f/x_textures, 1f/y_textures)
     };
+}
 }
